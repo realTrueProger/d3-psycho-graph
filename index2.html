@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    body {
+        font-family: "Inconsolata";
+    }
+
+    div {
+        border: 4px solid green;
+        display: inline-block;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .red {
+        color: red;
+    }
+
+    .alignCenter {
+        text-align: center;
+    }
+
+    div table {
+        width: 100%;
+    }
+
+    div p {
+        margin: 5px;
+    }
+</style>
+<svg width="960" height="600"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+<script>
+    var svg = d3.select("svg"),
+        width = +svg.attr("width"),
+        height = +svg.attr("height");
+
+    var simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(function (d) {
+            return d.id;
+        }))
+        //.force("charge", d3.forceManyBody().strength(-200))
+        .force('charge', d3.forceManyBody()
+            .strength(-200)
+            .theta(0.8)
+            .distanceMax(150)
+        )
+        		.force('collide', d3.forceCollide()
+              .radius(d => 80)
+              .iterations(2)
+            )
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+
+    const graph = {
+        "nodes": [{
+                "id": "1",
+                "group": 1
+            },
+            {
+                "id": "2",
+                "group": 2
+            },
+            {
+                "id": "4",
+                "group": 3
+            },
+            {
+                "id": "8",
+                "group": 4
+            },
+            {
+                "id": "16",
+                "group": 5
+            },
+            {
+                "id": "11",
+                "group": 1
+            },
+            {
+                "id": "12",
+                "group": 2
+            },
+        ],
+        "links": [{
+                "source": "1",
+                "target": "2",
+                "value": 1
+            },
+            {
+                "source": "2",
+                "target": "4",
+                "value": 1
+            },
+            {
+                "source": "4",
+                "target": "8",
+                "value": 1
+            },
+            {
+                "source": "4",
+                "target": "8",
+                "value": 1
+            },
+            {
+                "source": "8",
+                "target": "16",
+                "value": 1
+            },
+            {
+                "source": "16",
+                "target": "1",
+                "value": 1
+            }
+        ]
+    }
+
+
+    function run(graph) {
+
+        graph.links.forEach(function (d) {
+            //     d.source = d.source_id;    
+            //     d.target = d.target_id;
+        });
+
+
+
+        function createDiv(d) {
+            let myDiv = document.createElement('div');
+
+            let p = document.createElement('p');
+            p.classList.add('alignCenter');
+
+            let span1 = document.createElement('span');
+            span1.classList.add('red');
+            span1.innerText = "Base";
+
+            let span2 = document.createElement('span');
+            span2.innerText = ".Domain";
+
+            let span3 = document.createElement('span');
+            span2.innerText = `id:${d.id}`;
+
+            p.append(span1);
+            p.append(span2);
+            p.append(span3);
+
+            myDiv.append(p);
+
+            return myDiv;
+        }
+
+        function fo(d) {
+            let fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+            let div = createDiv(d);
+            fo.append(div);
+            return fo;
+        }
+
+        var node = svg.append("g")
+            .attr("class", "nodes")
+            .selectAll("foreignObject")
+            .data(graph.nodes)
+            .enter().append(function (d) {
+                return fo(d)
+            })
+            .attr("width", 10)
+            .attr("height", 10)
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        var link = svg.append("g")
+            .style("stroke", "#aaa")
+            .selectAll("line")
+            .data(graph.links)
+            .enter().append("line");
+
+
+        simulation
+            .nodes(graph.nodes)
+            .on("tick", ticked);
+
+        simulation.force("link")
+            .links(graph.links);
+
+        function ticked() {
+            link
+                .attr("x1", function (d) {
+                    return d.source.x;
+                })
+                .attr("y1", function (d) {
+                    return d.source.y;
+                })
+                .attr("x2", function (d) {
+                    return d.target.x;
+                })
+                .attr("y2", function (d) {
+                    return d.target.y;
+                });
+
+            node
+                .style("fill", "#efefef")
+                .style("stroke", "#424242")
+                .style("stroke-width", "1px")
+                .attr("x", function (d) {
+                    return d.x + 5;
+                })
+                .attr("y", function (d) {
+                    return d.y - 3;
+                });
+        }
+    }
+
+    function dragstarted(d) {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart()
+        d.fx = d.x
+        d.fy = d.y
+        //  simulation.fix(d);
+    }
+
+    function dragged(d) {
+        d.fx = d3.event.x
+        d.fy = d3.event.y
+        //  simulation.fix(d, d3.event.x, d3.event.y);
+    }
+
+    function dragended(d) {
+        d.fx = d3.event.x
+        d.fy = d3.event.y
+        if (!d3.event.active) simulation.alphaTarget(0);
+        //simulation.unfix(d);
+    }
+
+    run(graph)
+</script>
